@@ -122,15 +122,14 @@ Mcodeとはガラケーの絵文字変換モジュール、MobaSiFのアイデ�
 
 ### テスト
 
+テストで使うモジュールをインストールしています。
+E2EテストでHeadless Chromeを使うのでChromeと、Chromeで表示した際に画像を保尊することもあると思ったのでPNGのライブラリをインストールしています。
+Chromeは標準のyumリポジトリにないので、追加のリポジトリを設定しています。
+
 ```
 COPY yum.repos.d/google-chrome.repo /etc/yum.repos.d
 RUN yum install -y libpng libpng-devel google-chrome-stable
 RUN yum install -y nmap-ncat
 ```
 
-
-
 ## docker-compose
-
-
-## MCodeの除去
