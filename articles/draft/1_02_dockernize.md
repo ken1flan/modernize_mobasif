@@ -103,7 +103,7 @@ RUN cpanm Carton
 
 MobaSiFのためのApacheの設定を読み込むように設定ファイルに追記しています。
 また、XSモジュールをコンパイルしてインストールします。これらはあまりアップデートされないためです。
-ただし、XSモジュールのうち、Mcodeは64bit環境でコンパイルできなかったために除外しました。
+ただし、XSモジュールのうち、Mcodeは64bit環境でコンパイルできなかったために除外しました。詳しくは後述します。
 
 ```Dockerfile
 RUN echo "Include /usr/local/lib/mobalog/conf/httpd.conf" >> /etc/httpd/conf/httpd.conf
@@ -113,9 +113,12 @@ RUN cd /tmp/xs && ./makexs MobaConf && ./makexs MTemplate && ./makexs SoftbankEn
 
 #### Mcodeの除去
 
-##### Mcodeとは
+Mcodeとはガラケーの絵文字変換モジュール、MobaSiFのアイデンティティのひとつです。
+ですが、これからMobaSiFを使う人、もしくはMobaSiFを使っていてDocker化したいと思っている人がいたとして、使うのかと言われると使わないと思います。Cのソースコードをつぶさに読んで64bit対応しても全く生かされないので、削除してしまうことにしました。
+試行錯誤した軌跡は[こちら](https://github.com/ken1flan/mobasif_sample/pull/12)です。
 
-##### とり方
+`grep -ri mcode pm` で検索して、見つかった箇所を取り除いていきました。
+削除した作業の詳細は[こちら](https://github.com/ken1flan/mobasif_sample/pull/16)です。
 
 ### テスト
 
