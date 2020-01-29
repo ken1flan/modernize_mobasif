@@ -136,7 +136,6 @@ RUN yum install -y nmap-ncat
 
 マシンをよくある構成のようにWebアプリケーションサーバ(mobasif)とデータベースサーバ(mariadb)で分割したので、`docker`のみで対応しようとすると、起動が大変です。docker-composeを使って、マシンの構成や起動時の設定をまとめ、起動しやすくします。
 
-
 ### mobasif
 
 Webアプリケーションサーバのmobasifは、前述のDockerfileに記述された内容のイメージを使います。カレントディレクトリを`/usr/local/lib/mobalog`にマウントし、自PCから直接編集したものが反映されるようになっています。
@@ -160,6 +159,9 @@ services:
 ```
 
 ### mariadb
+
+データベースサーバのmariadbは、MariaDB公式のDockerイメージを使います。
+起動時の設定を制御するために、環境変数を設定したり、MariaDBの起動時に自動で読み込まれる`/etc/mysql/mariadb.conf.d`にファイルをマウントしたりしています。
 
 ```yml
 # docker-compose.yml
