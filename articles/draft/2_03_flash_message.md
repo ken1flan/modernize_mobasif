@@ -1,5 +1,13 @@
 # フラッシュメッセージ
 
+ログインの処理を書いていて、「ログインできました」のようなメッセージをログイン完了画面ではなくて、普通のページの上部に簡易に表示させるほうがシュッとしていてよいと思ったので、用意しました。
+動作は[RailsのFlash](https://railsguides.jp/action_controller_overview.html#flash)を参考にしています。
+
+フラッシュメッセージを管理するFlashというモジュールを作ります。
+任意の場所でメッセージ本文とタイプを指定して保存するset()と、
+設定されたフラッシュメッセージを取得するget()と、
+設定されたメッセージを空にするclear()があります。
+
 ```perl
 # pm/Flash.pm
 package Flash;
@@ -22,6 +30,8 @@ sub clear {
 	$_::S->clear(['flash_message', 'flash_type']);
 }
 ```
+
+任意の場所でFlash::set()で設定したら、HTMLの生成時にFlash::get()でフラッシュメッセージを取得、HTML内で利用できるハッシュに登録したあと、内容をFlash::clear()で片付けています。
 
 ```perl
 # pm/HTMLTemplate.pm
@@ -52,6 +62,8 @@ sub insert {
   # (省略)
   # :
 ```
+
+今回の場合はナビゲーションバーの直下にフラッシュメッセージを配置しました。
 
 ```html
 <!-- template/inc_html.txt -->
