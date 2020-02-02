@@ -1,8 +1,13 @@
 # テスト
 
+[Test::Spec](https://metacpan.org/pod/Test::Spec)を使います。
+[RSpec](http://rspec.info/)のように、テストを仕様書を書くような気持ちで書けます。
+
 ## モジュールのテスト
 
-Test::Specを使います。
+モジュールごとにテストファイルを一つ作成し、各サブルーチンに対して記述(describe)していきます。
+状況ごと(context)にそれであること(it)と期待する結果を書いていきます。
+また、テスト前後(before/after)に必要なことがあれば書いておきます。
 
 ```perl
 # test/pm/UserData.t
@@ -80,7 +85,9 @@ runtests unless caller;
 
 ## ブラウザを使ったテスト
 
-Test::Specの他に、Mechanize::Chrome を使います。
+実際にブラウザを使って、Apache経由でCGIを動かしてアクセスし、表示などを見て条件にあった内容が表示されているか確認します。[Mechanize::Chrome](https://metacpan.org/pod/WWW::Mechanize::Chrome)を使って、Chromeを操作します。
+
+E2Eテストなので、ユースケースに従って動作させながら内容を確認するようにしています。
 
 ```perl
 use strict;
@@ -139,9 +146,15 @@ runtests unless caller;
 ```
 
 ## CircleCIでテスト実行
+テストができたので、CircleCIで実行できるようにします。
+`.circleci/config.yml`を見ていきます。
+
+### 実行する仮想マシン
+
+MobaSiFのアプリケーションが動作するように設定したDockerイメージを使います。事前に[Docker Hub](https://hub.docker.com/repository/docker/ken1flan/mobasif_sample)にアップしておく必要があります。
+データベースサーバはCircleCIのものを利用します。
 
 ```yml
-# .circleci/config.yml
 version: 2.1
 
 executors:
@@ -152,7 +165,33 @@ executors:
         name: mariadb
         environment:
           MYSQL_ALLOW_EMPTY_PASSWORD: yes
+```
 
+### CIのジョブと実行順
+
+CIの処理を環境の準備(prepare)とテスト(test)に分割しています。
+テストは準備のジョブが終わってから実行されるようにしています。
+本当は分割すると、環境の復元をしたりするので遅くなるのですが、プルリクエストのチェック結果が見やすくなるので入れています。今回は間に合わなかったのですが、構文チェックなども分けたほうが原因がわかりやすかったりすると思います。
+
+```yml
+workflows:
+  version: 2
+  build:
+    jobs:
+      - prepare
+      - test:
+          requires:
+            - prepare
+```
+
+![../images/1_03_ci_result.png](../images/1_03_ci_result.png)
+
+### 準備
+
+実行マシンの準備をします。
+コードをチェックアウトをして、cartonによるモジュールのインストール、HTMLテンプレートファイルのコンパイルを行います。また、apacheユーザがdataディレクトリに読み書きするので、パーミッションをへんこうしています。最後に環境を保存しています。
+
+```yml
 jobs:
   prepare:
     executor: my-executor
@@ -167,18 +206,25 @@ jobs:
       - run:
           name: carton install
           command: carton install
-      - run:
-          name: compile template
-          command: MOBA_DIR=`pwd` carton exec script/tool/compile_template
       - save_cache:
           key: cpanfile-cache-{{ .Environment.CI_CACHE_KEY }}-{{ checksum "cpanfile.snapshot" }}
           paths:
             - local
+      - run:
+          name: compile template
+          command: MOBA_DIR=`pwd` carton exec script/tool/compile_template
       - persist_to_workspace:
           root: .
           paths:
             - ./
+```
 
+### テスト
+テストを行います。
+そのために環境を復元、apacheを起動、MariaDBにデータベースを設定したあとに、テストを行います。
+
+
+```yml
   test:
     executor: my-executor
     working_directory: /usr/local/lib/mobalog
@@ -204,13 +250,4 @@ jobs:
           name: test
           command: |
             carton exec prove -r test
-
-workflows:
-  version: 2
-  build:
-    jobs:
-      - prepare
-      - test:
-          requires:
-            - build
 ```
