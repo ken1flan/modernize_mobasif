@@ -6,8 +6,10 @@ CHAPS:
   - 1_02_dockernize.re
   - 1_03_test.re
   - 2_01_sample_application.re
-  - 2_02_cookie_and_session.re
-  - 2_03_flash_message.re
+  - 2_02_cookie.re
+  - 2_03_session.re
+  - 2_04_login_logout.re
+  - 2_05_flash_message.re
 
 APPENDIX:
 
