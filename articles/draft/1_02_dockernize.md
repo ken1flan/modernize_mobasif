@@ -1,16 +1,16 @@
 # 現行バージョンのOS・ミドルウェアを使い、Docker化する
 
 基本的には、MobaSiFのインストール手順を読み替えて、Dockerfileを作っていきました。
-ここでは、Dockerfileと、開発環境で使うdocker-imageについて説明します。
+ここでは、Dockerfileと、開発環境で使うdocker-compose.ymlについて説明します。
 
-## サーバ構成
+## コンテナ構成
 
 よくある構成のように、データベースサーバとWebアプリケーションサーバとで分けます。
 
 - mobasif(Webアプリケーションサーバ)
 - mariadb(データベースサーバ)
 
-## 方針
+## Dockerイメージの方針
 
 ### mobasif
 
@@ -67,7 +67,7 @@ RUN yum groupinstall -y "Development Tools"
 
 ### Apache
 
-CentOSのyumリポジトリに管理されているApache HTTP Serverと、mod_fcgidをインストールし、ポート80でアクセスできるようにしています。
+CentOSのyumリポジトリに管理されているApache HTTP Serverと、mod_fcgidをインストールし、ポート80でアクセスできるようにしています。MobaSiFのドキュメントではmod_fastcgiでしたが、すでになくなっていたため、mod_fcgidに変更しています。
 また、systemdに登録し、それ経由で起動します。
 
 ```Dockerfile
@@ -109,6 +109,41 @@ MobaSiFのためのApacheの設定を読み込むように設定ファイルに�
 RUN echo "Include /usr/local/lib/mobalog/conf/httpd.conf" >> /etc/httpd/conf/httpd.conf
 COPY src/xs /tmp/xs
 RUN cd /tmp/xs && ./makexs MobaConf && ./makexs MTemplate && ./makexs SoftbankEncode && ./makexs HTMLFast && ./makexs Kcode
+```
+
+#### Apacheの設定
+
+Apacheのデフォルトの設定ファイルの最後で読み込むようにさせた`conf/httpd.conf`です。
+アプリケーションを`/usr/local/lib/mobalog`に配置していますが、その中の`fcgi`ディレクトリでCGIを実行できるようにしています。
+また、`htdocs`は画像などの静的ファイルが置かれているディレクトリでこちらも読み込みできるように設定しています。こちらはCGIを実行できるようにしてありません。
+
+```
+# conf/httpd.conf
+<VirtualHost *>
+ServerName   lvh.me
+DocumentRoot /usr/local/lib/mobalog/htdocs
+Alias  /fcgi /usr/local/lib/mobalog/fcgi
+Include      /usr/local/lib/mobalog/conf/rewrite.conf
+
+LogFormat    "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-agent}i\" \"%{x-dcmguid}i\" \"%{x-up-subno}i\" \"%{x-jphone-uid}i\" " custom
+CustomLog    /usr/local/lib/mobalog/data/log/access_log custom
+ErrorLog     /usr/local/lib/mobalog/data/log/error_log
+
+<Directory /usr/local/lib/mobalog/htdocs>
+  Order allow,deny
+  Allow from all
+  Require all granted
+</Directory>
+
+<Directory /usr/local/lib/mobalog/fcgi>
+  SetHandler fcgid-script
+  Options +ExecCGI
+
+  Order allow,deny
+  Allow from all
+  Require all granted
+</Directory>
+</VirtualHost>
 ```
 
 #### Mcodeの除去
