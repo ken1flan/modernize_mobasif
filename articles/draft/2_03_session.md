@@ -28,9 +28,11 @@
 sub _restore_or_create_session {
 	CGI::Session->name('session_id');
 	my $session_id = $_::C->{session_id} ? $_::C->{session_id}->value : undef;
-	$_::S = new CGI::Session("driver:File", $session_id, {Directory=> $_::SESSION_DIR});
+	$_::S = new CGI::Session("driver:File", $session_id,
+		{Directory=> $_::SESSION_DIR});
 	$session_id = $_::S->id() unless (defined($session_id));
-	$_::C->{session_id} = new CGI::Cookie(-name => 'session_id', -value => $session_id, -expires => '+1y');
+	$_::C->{session_id} = new CGI::Cookie(-name => 'session_id',
+		-value => $session_id, -expires => '+1y');
 	$_::S->expires('+1y');
 }
 # :

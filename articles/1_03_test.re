@@ -1,15 +1,20 @@
-# テスト
 
-[Test::Spec](https://metacpan.org/pod/Test::Spec)を使います。
-[RSpec](http://rspec.info/)のように、テストを仕様書を書くような気持ちで書けます。
+= テスト
 
-## モジュールのテスト
+
+@<href>{https://metacpan.org/pod/Test::Spec,Test::Spec}を使います。
+@<href>{http://rspec.info/,RSpec}のように、テストを仕様書を書くような気持ちで書けます。
+
+
+== モジュールのテスト
+
 
 モジュールごとにテストファイルを一つ作成し、各サブルーチンに対して記述(describe)していきます。
 状況ごと(context)にそれであること(it)と期待する結果を書いていきます。
 また、テスト前後(before/after)に必要なことがあれば書いておきます。
 
-```perl
+
+//emlist[][perl]{
 # test/pm/UserData.t
 use Test::Spec;
 
@@ -83,15 +88,19 @@ describe 'UserData' => sub {
 };
 
 runtests unless caller;
-```
+//}
 
-## ブラウザを使ったテスト
+== ブラウザを使ったテスト
 
-実際にブラウザを使って、Apache経由でCGIを動かしてアクセスし、表示などを見て条件にあった内容が表示されているか確認します。[Mechanize::Chrome](https://metacpan.org/pod/WWW::Mechanize::Chrome)を使って、Chromeを操作します。
+
+実際にブラウザを使って、Apache経由でCGIを動かしてアクセスし、表示などを見て条件にあった内容が表示されているか確認します。@<href>{https://metacpan.org/pod/WWW::Mechanize::Chrome,Mechanize::Chrome}を使って、Chromeを操作します。
+
+
 
 E2Eテストなので、ユースケースに従って動作させながら内容を確認するようにしています。
 
-```perl
+
+//emlist[][perl]{
 use strict;
 use warnings;
 use utf8;
@@ -146,18 +155,23 @@ describe 'Session' => sub {
 
 };
 runtests unless caller;
-```
+//}
 
-## CircleCIでテスト実行
+== CircleCIでテスト実行
+
+
 テストができたので、CircleCIで実行できるようにします。
-`.circleci/config.yml`を見ていきます。
+@<tt>{.circleci/config.yml}を見ていきます。
 
-### 実行する仮想マシン
 
-MobaSiFのアプリケーションが動作するように設定したDockerイメージを使います。事前に[Docker Hub](https://hub.docker.com/repository/docker/ken1flan/mobasif_sample)にアップしておく必要があります。
+=== 実行する仮想マシン
+
+
+MobaSiFのアプリケーションが動作するように設定したDockerイメージを使います。事前に@<href>{https://hub.docker.com/repository/docker/ken1flan/mobasif_sample,Docker Hub}にアップしておく必要があります。
 データベースサーバはCircleCIのものを利用します。
 
-```yml
+
+//emlist[][yml]{
 version: 2.1
 
 executors:
@@ -168,15 +182,17 @@ executors:
         name: mariadb
         environment:
           MYSQL_ALLOW_EMPTY_PASSWORD: yes
-```
+//}
 
-### CIのジョブと実行順
+=== CIのジョブと実行順
+
 
 CIの処理を環境の準備(prepare)とテスト(test)に分割しています。
 テストは準備のジョブが終わってから実行されるようにしています。
 本当は分割すると、環境の復元をしたりするので遅くなるのですが、プルリクエストのチェック結果が見やすくなるので入れています。今回は間に合わなかったのですが、構文チェックなども分けたほうが原因がわかりやすかったりすると思います。
 
-```yml
+
+//emlist[][yml]{
 workflows:
   version: 2
   build:
@@ -185,16 +201,22 @@ workflows:
       - test:
           requires:
             - prepare
-```
+//}
 
-![../images/1_03_ci_result.png](../images/1_03_ci_result.png)
 
-### 準備
+//indepimage[1_03_ci_result][][scale=1.0]{
+//}
+
+
+
+=== 準備
+
 
 実行マシンの準備をします。
 コードをチェックアウトをして、cartonによるモジュールのインストール、HTMLテンプレートファイルのコンパイルを行います。また、apacheユーザがdataディレクトリに読み書きするので、パーミッションをへんこうしています。最後に環境を保存しています。
 
-```yml
+
+//emlist[][yml]{
 jobs:
   prepare:
     executor: my-executor
@@ -222,14 +244,16 @@ jobs:
           root: .
           paths:
             - ./
-```
+//}
 
-### テスト
+=== テスト
+
+
 テストを行います。
 そのために環境を復元、apacheを起動、MariaDBにデータベースを設定したあとに、テストを行います。
 
 
-```yml
+//emlist[][yml]{
   test:
     executor: my-executor
     working_directory: /usr/local/lib/mobalog
@@ -255,4 +279,4 @@ jobs:
           name: test
           command: |
             carton exec prove -r test
-```
+//}
